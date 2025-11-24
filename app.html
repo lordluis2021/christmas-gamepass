@@ -156,61 +156,98 @@
     })();
   </script>
   <!-- Firebase SDKs (modo compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js"></script>
+<!-- Firebase SDKs (modo compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore-compat.js"></script>  
 
-  <script>
-    // Config que te dio Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyBCqxfR74vgZ2dIo6mKbNJIx0Nw4PsjVJU",
-      authDomain: "christmas-gamepass.firebaseapp.com",
-      projectId: "christmas-gamepass",
-      storageBucket: "christmas-gamepass.firebasestorage.app",
-      messagingSenderId: "335985713484",
-      appId: "1:335985713484:web:9f2db5a010d89995046fe9"
-    };
+ <script>
+  // Config de Firebase (la misma que ya tienes)
+  const firebaseConfig = {
+  apiKey: "AIzaSyBCqxfR74vgZ2dIo6mKbNJIx0Nw4PsjVJU",
+  authDomain: "christmas-gamepass.firebaseapp.com",
+  projectId: "christmas-gamepass",
+  storageBucket: "christmas-gamepass.firebasestorage.app",
+  messagingSenderId: "335985713484",
+  appId: "1:335985713484:web:9f2db5a010d89995046fe9"
+  };
 
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging();
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+  const db = firebase.firestore();
 
-    if ("serviceWorker" in navigator) {
-      (async () => {
-        try {
-          // 1) Registrar el service worker EN LA RUTA DEL REPO
-          const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-          console.log("Service worker registrado con scope:", registration.scope);
+  const STORAGE_KEY = "navidad_oxxo_user";
 
-          // 2) Pedir permiso de notificaciones
-          const permission = await Notification.requestPermission();
-          console.log("Permiso de notificaciones:", permission);
+  if ("serviceWorker" in navigator) {
+    (async () => {
+      try {
+        // 1) Registrar el SW
+        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+        console.log("Service worker registrado con scope:", registration.scope);
 
-          if (permission !== "granted") {
-            console.log("El usuario no aceptó las notificaciones.");
-            return;
-          }
+        // 2) Pedir permiso de notificaciones
+        const permission = await Notification.requestPermission();
+        console.log("Permiso de notificaciones:", permission);
 
-          // 3) Obtener el token de FCM usando ESTE service worker
-          const currentToken = await messaging.getToken({
-            vapidKey: "BGLdFxiAOYkIx6Ck5zleBy1_BrgojS8n0PfrFLmpTIc6YJY5d2TT5d5Glr17Y18UD2U8R4L-1GWL7dB7SMX00bk",
-            serviceWorkerRegistration: registration
-          });
-
-          if (currentToken) {
-            console.log("FCM token para este dispositivo:");
-            console.log(currentToken);
-            // Luego lo guardaremos con phone/email
-          } else {
-            console.log("No se pudo obtener token de FCM (token vacío).");
-          }
-        } catch (err) {
-          console.error("Error en configuración de FCM:", err);
+        if (permission !== "granted") {
+          console.log("El usuario no aceptó las notificaciones.");
+          return;
         }
-      })();
-    } else {
-      console.log("Service workers no soportados en este navegador.");
-    }
-  </script>
+
+        // 3) Obtener token de FCM
+        const currentToken = await messaging.getToken({
+          vapidKey: "BGLdFxiAOYkIx6Ck5zleBy1_BrgojS8n0PfrFLmpTIc6YJY5d2TT5d5Glr17Y18UD2U8R4L-1GWL7dB7SMX00bk",
+          serviceWorkerRegistration: registration
+        });
+
+        if (!currentToken) {
+          console.log("No se pudo obtener token de FCM (token vacío).");
+          return;
+        }
+
+        console.log("FCM token para este dispositivo:");
+        console.log(currentToken);
+
+        // 4) Leer datos del usuario desde localStorage
+        const rawUser = localStorage.getItem(STORAGE_KEY);
+        if (!rawUser) {
+          console.log("No hay usuario en localStorage, no se guarda en Firestore.");
+          return;
+        }
+
+        let user;
+        try {
+          user = JSON.parse(rawUser);
+        } catch (e) {
+          console.error("Error parseando usuario de localStorage:", e);
+          return;
+        }
+
+        const now = new Date().toISOString();
+
+        // 5) Guardar/actualizar en Firestore
+        const docId = user.email || user.phone || currentToken; // identificador básico
+        await db.collection("players").doc(docId).set(
+          {
+            phone: user.phone || null,
+            email: user.email || null,
+            fcmToken: currentToken,
+            updatedAt: now,
+            createdAt: user.createdAt || now
+          },
+          { merge: true }
+        );
+
+        console.log("Jugador guardado/actualizado en Firestore:", docId);
+      } catch (err) {
+        console.error("Error en configuración de FCM / Firestore:", err);
+      }
+    })();
+  } else {
+    console.log("Service workers no soportados en este navegador.");
+  }
+</script>
+
 
 </body>
 </html>
