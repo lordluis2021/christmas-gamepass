@@ -155,11 +155,12 @@
       });
     })();
   </script>
-    <!-- Firebase SDKs (modo compat, ideal para página estática) -->
+  <!-- Firebase SDKs (modo compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js"></script>
-    <script>
-    // Config que te dio Firebase al crear la app web
+
+  <script>
+    // Config que te dio Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBCqxfR74vgZ2dIo6mKbNJIx0Nw4PsjVJU",
       authDomain: "christmas-gamepass.firebaseapp.com",
@@ -169,17 +170,18 @@
       appId: "1:335985713484:web:9f2db5a010d89995046fe9"
     };
 
-    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
-
     const messaging = firebase.messaging();
 
-    // Registrar el service worker de FCM
     if ("serviceWorker" in navigator) {
+      // IMPORTANTE: ruta relativa al repo, no a la raíz del dominio
       navigator.serviceWorker
-        .register("firebase-messaging-sw.js")
+        .register("./firebase-messaging-sw.js")
         .then(function (registration) {
-          console.log("Service worker registrado:", registration);
+          console.log("Service worker registrado con scope:", registration.scope);
+
+          // Le decimos a Firebase que use ESTE service worker
+          messaging.useServiceWorker(registration);
 
           // Pedimos permiso de notificaciones
           return Notification.requestPermission();
@@ -191,7 +193,7 @@
             return;
           }
 
-          // Obtener token de FCM para este navegador
+          // Obtenemos el token de FCM
           return messaging.getToken({
             vapidKey: "BGLdFxiAOYkIx6Ck5zleBy1_BrgojS8n0PfrFLmpTIc6YJY5d2TT5d5Glr17Y18UD2U8R4L-1GWL7dB7SMX00bk"
           });
@@ -200,7 +202,7 @@
           if (currentToken) {
             console.log("FCM token para este dispositivo:");
             console.log(currentToken);
-            // Por ahora solo lo vemos en consola. Luego lo guardaremos en algún lado.
+            // Después lo guardaremos junto con phone/email
           } else {
             console.log("No se pudo obtener token de FCM.");
           }
@@ -212,6 +214,5 @@
       console.log("Service workers no soportados en este navegador.");
     }
   </script>
-
 </body>
 </html>
