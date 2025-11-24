@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Navidad en OXXO - Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1b5e20, #0d0d0d);
+      color: #fff;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 16px;
+      padding: 24px 20px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(76, 175, 80, 0.15);
+      border: 1px solid rgba(76, 175, 80, 0.6);
+      font-size: 0.75rem;
+      margin-bottom: 12px;
+    }
+    .field {
+      margin-top: 12px;
+      font-size: 0.85rem;
+    }
+    .field span {
+      opacity: 0.8;
+    }
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button, a.button-link {
+      display: inline-block;
+      text-align: center;
+      padding: 12px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: none;
+      background: linear-gradient(90deg, #ffca28, #ff5722);
+      color: #202020;
+    }
+    .secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #fff;
+    }
+    .small {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="tag">Jugador registrado</div>
+    <h1>Navidad en OXXO 🎄</h1>
+    <p id="welcome-text">
+      Cargando tus datos...
+    </p>
+
+    <div id="user-info" style="display:none;">
+      <div class="field">
+        <span>Teléfono:</span><br />
+        <strong id="phone-text"></strong>
+      </div>
+      <div class="field">
+        <span>Correo:</span><br />
+        <strong id="email-text"></strong>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="button-link" href="https://www.oxxo.com" target="_blank" rel="noopener">
+        Ir al minijuego
+      </a>
+      <button class="secondary" id="reset-btn">
+        Cambiar datos de acceso
+      </button>
+    </div>
+
+    <div class="small">
+      Más adelante, desde aquí activaremos tus notificaciones del minijuego.  
+      Por ahora, guarda esta página como acceso rápido.
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "navidad_oxxo_user";
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const welcome = document.getElementById("welcome-text");
+      const userInfo = document.getElementById("user-info");
+      const phoneText = document.getElementById("phone-text");
+      const emailText = document.getElementById("email-text");
+      const resetBtn = document.getElementById("reset-btn");
+
+      if (!raw) {
+        // Si no hay datos, volvemos al registro
+        window.location.href = "index.html";
+        return;
+      }
+
+      let user;
+      try {
+        user = JSON.parse(raw);
+      } catch (e) {
+        console.error("No se pudo parsear el usuario:", e);
+        window.location.href = "index.html";
+        return;
+      }
+
+      welcome.textContent = "Hola, " + (user.email || "jugador") + ". ¡Bienvenido a Navidad en OXXO!";
+      phoneText.textContent = user.phone || "-";
+      emailText.textContent = user.email || "-";
+      userInfo.style.display = "block";
+
+      resetBtn.addEventListener("click", function () {
+        if (confirm("Esto borrará los datos guardados en este navegador. ¿Continuar?")) {
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.href = "index.html";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
