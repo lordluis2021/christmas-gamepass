@@ -170,49 +170,47 @@
       appId: "1:335985713484:web:9f2db5a010d89995046fe9"
     };
 
+    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
     const messaging = firebase.messaging();
 
     if ("serviceWorker" in navigator) {
-      // IMPORTANTE: ruta relativa al repo, no a la raíz del dominio
-      navigator.serviceWorker
-        .register("./firebase-messaging-sw.js")
-        .then(function (registration) {
+      (async () => {
+        try {
+          // 1) Registrar el service worker EN LA RUTA DEL REPO
+          const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
           console.log("Service worker registrado con scope:", registration.scope);
 
-          // Le decimos a Firebase que use ESTE service worker
-          messaging.useServiceWorker(registration);
-
-          // Pedimos permiso de notificaciones
-          return Notification.requestPermission();
-        })
-        .then(function (permission) {
+          // 2) Pedir permiso de notificaciones
+          const permission = await Notification.requestPermission();
           console.log("Permiso de notificaciones:", permission);
+
           if (permission !== "granted") {
             console.log("El usuario no aceptó las notificaciones.");
             return;
           }
 
-          // Obtenemos el token de FCM
-          return messaging.getToken({
-            vapidKey: "BGLdFxiAOYkIx6Ck5zleBy1_BrgojS8n0PfrFLmpTIc6YJY5d2TT5d5Glr17Y18UD2U8R4L-1GWL7dB7SMX00bk"
+          // 3) Obtener el token de FCM usando ESTE service worker
+          const currentToken = await messaging.getToken({
+            vapidKey: "BGLdFxiAOYkIx6Ck5zleBy1_BrgojS8n0PfrFLmpTIc6YJY5d2TT5d5Glr17Y18UD2U8R4L-1GWL7dB7SMX00bk",
+            serviceWorkerRegistration: registration
           });
-        })
-        .then(function (currentToken) {
+
           if (currentToken) {
             console.log("FCM token para este dispositivo:");
             console.log(currentToken);
-            // Después lo guardaremos junto con phone/email
+            // Luego lo guardaremos con phone/email
           } else {
-            console.log("No se pudo obtener token de FCM.");
+            console.log("No se pudo obtener token de FCM (token vacío).");
           }
-        })
-        .catch(function (err) {
+        } catch (err) {
           console.error("Error en configuración de FCM:", err);
-        });
+        }
+      })();
     } else {
       console.log("Service workers no soportados en este navegador.");
     }
   </script>
+
 </body>
 </html>
